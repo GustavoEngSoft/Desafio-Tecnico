@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - oab-network
+
+  # Serviço do agente - meio desnecessário mas deixei aqui
+  agent:
+    build: .
+    command: python -c "from agent.agent_llm import run_agent; print('Agent rodando')"
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+    depends_on:
+      - api
+    networks:
+      - oab-network
+
+networks:
+  oab-network:
+    driver: bridge
